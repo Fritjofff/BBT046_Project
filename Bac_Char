@@ -2,10 +2,4 @@ print("Hello World!") #Prints Hello World!
 
 
 
-fastqc
 
-hello #????
-
-
-#We check Relatives abundance for PCA/Hierechical Clustering
-#CLR (Centered Log Ratio for PCA)
