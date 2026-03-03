@@ -9,3 +9,31 @@ do
 done
 
 
+#Fastp trimming
+%%bash
+set -euo pipefail
+
+mkdir -p trimmed_fastq fastp_reports fastqc_trimmed
+
+for sample in SAMP071 SAMP074 SAMP099 SAMP100
+do
+  r1=${sample}_1.fastq
+  r2=${sample}_2.fastq
+
+  out1=trimmed_fastq/${sample}_1.trim.fastq.gz
+  out2=trimmed_fastq/${sample}_2.trim.fastq.gz
+
+  fastp \
+    -i "$r1" -I "$r2" \
+    -o "$out1" -O "$out2" \
+    --detect_adapter_for_pe \
+    --cut_front --cut_tail \
+    --cut_window_size 4 --cut_mean_quality 20 \
+    --length_required 30 \
+    --thread 4 \
+    --html fastp_reports/${sample}.fastp.html \
+    --json fastp_reports/${sample}.fastp.json
+
+  fastqc "$out1" "$out2" -o fastqc_trimmed
+done
+
