@@ -1,5 +1,11 @@
-print("Hello World!") #Prints Hello World!
+#make new files for quality check of raw data
+%%bash
 
+mkdir -p raw_fastqc
 
+for sample in SAMP071 SAMP074 SAMP099 SAMP100
+do
+  fastqc ${sample}_1.fastq ${sample}_2.fastq -o raw_fastqc
+done
 
 
