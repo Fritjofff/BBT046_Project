@@ -1,4 +1,4 @@
-#make new files for quality check of raw data
+# Make new files for quality check of raw data
 %%bash
 
 mkdir -p raw_fastqc
@@ -9,9 +9,9 @@ do
 done
 
 
-#Fastp trimming
+# fastp trimming
 %%bash
-set -euo pipefail
+set -uo pipefail
 
 mkdir -p trimmed_fastq fastp_reports fastqc_trimmed
 
