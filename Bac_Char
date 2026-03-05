@@ -37,3 +37,30 @@ do
   fastqc "$out1" "$out2" -o fastqc_trimmed
 done
 
+# Indexing (preliminary)
+%%bash
+set -uo pipefail
+
+# Join all .fa files into a large reference file
+find representatives/ -name "*.fa" -print0 | xargs -0 cat > combined_reference.fasta
+echo "New reference file created"
+
+# Set variable to the new file
+REF="combined_reference.fasta"
+
+# Indexing for BWA
+echo "Starting indexing for BWA"
+bwa index $REF
+echo "BWA indexing done"
+
+# Indexing for Bowtie2
+echo "Starting indexing for Bowtie2"
+bowtie2-build $REF bowtie2_index
+echo "Bowtie2 indexing done"
+
+# Indexing for Minimap2
+echo "Starting indexing for Minimap2"
+minimap2 -d minimap2_index.mmi $REF
+echo "Minimap2 indexing done"
+
+echo "Indexing complete"
