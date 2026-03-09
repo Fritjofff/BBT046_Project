@@ -1,0 +1,70 @@
+#samla data på samma ställe
+%%bash
+INPUT_DIR="./metaphlan_results/mapping" #dubbelkolla om det finns en samlad fil för mapping resultat
+OUTPUT_FILE="mapping_12_samples_matrix.tsv"
+
+# 1. Hämta radnamn (sekvens-ID) från en av filerna
+FIRST_FILE=$(ls $INPUT_DIR/*_counts.txt | head -n 1)
+cut -f1 "$FIRST_FILE" | head -n -1 > rows.tmp
+
+# 2. Skapa kolumner för alla 12 kombinationer (3x4)
+COLUMNS="rows.tmp"
+for FILE in $INPUT_DIR/*_counts.txt; do
+    # Extraherar t.ex. SAMP071_bwa från filnamnet
+    NAME=$(basename "$FILE" _counts.txt)
+    echo "$NAME" > "${NAME}.tmp"
+    cut -f3 "$FILE" | head -n -1 >> "${NAME}.tmp"
+    COLUMNS="$COLUMNS ${NAME}.tmp"
+done
+
+# 3. Slå ihop och städa
+paste $COLUMNS > "$OUTPUT_FILE"
+rm *.tmp
+
+echo "Matris med 12 kolumner skapad: $OUTPUT_FILE"
+
+#PCA analys
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+# 1. Ladda data
+df = pd.read_csv('mapping_12_samples_matrix.tsv', sep='\t', index_col=0)
+
+# 2. Skapa metadata (ID, Sample, Method)
+# Delar upp t.ex. "SAMP071_bowtie2" till "SAMP071" och "bowtie2"
+samples = df.columns
+metadata = []
+for s in samples:
+    parts = s.split('_')
+    metadata.append({'ID': s, 'Sample': parts[0], 'Method': parts[1]})
+meta_df = pd.DataFrame(metadata).set_index('ID')
+
+# 3. Normalisering (Log + Scaling) - Viktigt för rättvis jämförelse!
+data_log = np.log1p(df.T)
+scaled_data = StandardScaler().fit_transform(data_log)
+
+# 4. Kör PCA
+pca = PCA(n_components=2)
+pca_res = pca.fit_transform(scaled_data)
+plot_df = pd.DataFrame(pca_res, columns=['PC1', 'PC2'], index=samples)
+plot_df = pd.concat([plot_df, meta_df], axis=1)
+
+# 5. Visualisering
+plt.figure(figsize=(12, 8))
+sns.scatterplot(data=plot_df, x='PC1', y='PC2', 
+                hue='Sample',    # Färg per prov (4 färger)
+                style='Method',  # Form per metod (3 former: cirkel, kryss, fyrkant)
+                s=200, palette='Set1')
+
+# Axlar och design
+var = pca.explained_variance_ratio_ * 100
+plt.xlabel(f'PC1 ({var[0]:.1f}%)')
+plt.ylabel(f'PC2 ({var[1]:.1f}%)')
+plt.title('PCA: Jämförelse av 3 Mapping-metoder på 4 Samples')
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.grid(linestyle='--', alpha=0.6)
+plt.show()
