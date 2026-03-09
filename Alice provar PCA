@@ -1,0 +1,55 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+#Convert the data into pandas dataframe 
+df = pd.DataFrame(input_data_pca)
+
+#Separate metadata from numeric features 
+metadata = df[['dataset', 'method']]
+features = df.drop(columns=['dataset', 'method'])
+
+#Standardize the features
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(features) #Scaling the data
+
+#Applying PCA
+pca = PCA(n_components = 2)
+data_pca = pca.fit_transform(scaled_data) #Projects standardized data onto the principal components
+pca_df = pd.DataFrame(data_pca, columns=['PC1','PC2']) #Stores PCA result in a dataframe
+
+# Add metadata back for plotting
+pca_df['dataset'] = metadata['dataset'].values
+pca_df['method'] = metadata['method'].values
+
+#Visualize the PCA
+#Marks different methods with different shapes
+#Marks different datatypes in different colors
+plt.figure(figsize=(8,6))
+
+markers = {'M1': 'o', 'M2': '^', 'M3': 's'} 
+
+for dataset in pca_df["dataset"].unique():
+    for method in pca_df["method"].unique():
+
+        subset = pca_df[
+            (pca_df["dataset"] == dataset) &
+            (pca_df["method"] == method)
+        ]
+
+        plt.scatter(
+            subset["PC1"],
+            subset["PC2"],
+            label=f"{dataset}-{method}",
+            marker=markers[method]
+        )
+
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.legend()
+plt.show()
+
+#How much of the variation is explained in each PC
+print(pca.explained_variance_ratio_)
